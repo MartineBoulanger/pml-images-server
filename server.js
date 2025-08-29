@@ -9,6 +9,7 @@ import { randomUUID } from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const domainUrl = 'https://pml-images-server.onrender.com';
 
 // ===== Config =====
 const PORT = 4000; // use 4000 to avoid Next.js 3000
@@ -105,7 +106,7 @@ function normalizeTags(tags) {
 }
 
 function toPublicUrl(filename) {
-  return `/uploads/${filename}`; // behind a proxy, prefix with your domain
+  return `${domainUrl}/uploads/${filename}`; // behind a proxy, prefix with your domain
 }
 
 // ===== Routes =====
@@ -256,5 +257,7 @@ app.delete('/api/images/:id', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ Image CMS API running on http://localhost:${PORT}`);
+  console.log(
+    `✅ Image CMS API running on ${domainUrl} or http://localhost:${PORT}`
+  );
 });
