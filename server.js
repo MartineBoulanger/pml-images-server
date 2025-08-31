@@ -9,35 +9,38 @@ import { randomUUID } from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const domainUrl = 'https://pml-images-server.onrender.com';
 
 // ===== Config =====
-const PORT = 4000; // use 4000 to avoid Next.js 3000
+const PORT = 4000; // use 4000 to avoid Next.js 3000 - only in development
 const DATA_DIR = path.join(__dirname, 'data');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
-const DATA_FILE = path.join(DATA_DIR, 'images.json');
+const DATA_IMAGES_FILE = path.join(DATA_DIR, 'images.json');
 const CORS_ORIGINS = (
-  process.env.CORS_ORIGINS || 'http://localhost:4000'
+  process.env.CORS_ORIGINS || 'http://localhost:43000'
 ).split(',');
 const API_KEY = process.env.API_KEY || ''; // optional simple auth
+const domainUrl = 'https://pml-images-server.onrender.com';
+// const domainUrl = 'http://localhost:' + PORT; // only in development
 
 // ===== Bootstrapping =====
 function ensureDirSync(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
-ensureDirSync(DATA_DIR);
+ensureDirSync(DATA_IMAGES_FILE);
 ensureDirSync(UPLOADS_DIR);
-if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, '[]', 'utf-8');
+if (!fs.existsSync(DATA_IMAGES_FILE))
+  fs.writeFileSync(DATA_IMAGES_FILE, '[]', 'utf-8');
 
 async function readDB() {
-  const raw = await fsp.readFile(DATA_FILE, 'utf-8');
+  const raw = await fsp.readFile(DATA_IMAGES_FILE, 'utf-8');
   return JSON.parse(raw);
 }
+
 async function writeDB(data) {
-  const tmp = DATA_FILE + '.tmp';
+  const tmp = DATA_IMAGES_FILE + '.tmp';
   await fsp.writeFile(tmp, JSON.stringify(data, null, 2));
-  await fsp.rename(tmp, DATA_FILE);
+  await fsp.rename(tmp, DATA_IMAGES_FILE);
 }
 
 // ===== Express app =====
@@ -74,6 +77,7 @@ const allowedTypes = new Set([
   'image/gif',
   'image/svg+xml',
 ]);
+
 const upload = multer({
   storage: multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
@@ -125,6 +129,7 @@ app.post('/api/images', upload.single('image'), async (req, res) => {
       tags = [],
       custom = {},
     } = req.body;
+
     const record = {
       id: randomUUID(),
       filename: req.file.filename,
@@ -257,7 +262,5 @@ app.delete('/api/images/:id', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(
-    `✅ Image CMS API running on ${domainUrl} or http://localhost:${PORT}`
-  );
+  console.log(`✅ Image CMS API running on ${domainUrl}`);
 });
