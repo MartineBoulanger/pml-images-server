@@ -191,6 +191,45 @@ app.get('/api/images', async (req, res) => {
   res.json({ items: paged, total, page: p, limit: l });
 });
 
+// Add this endpoint to your Node.js image server
+app.post('/api/images/batch', async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'Invalid ids array' });
+    }
+
+    // Limit batch size to prevent abuse
+    if (ids.length > 50) {
+      return res.status(400).json({ error: 'Too many IDs requested' });
+    }
+
+    const db = await readDB();
+    // Fetch all images in parallel (adjust based on your database)
+    const images = await Promise.all(
+      ids.map(async (id) => {
+        try {
+          // Replace this with your actual database query
+          const image = await db.find((r) => r.id === id);
+          return image;
+        } catch (error) {
+          console.error(`Failed to fetch image ${id}:`, error);
+          return null;
+        }
+      })
+    );
+
+    // Filter out null results
+    const validImages = images.filter(Boolean);
+
+    res.json(validImages);
+  } catch (error) {
+    console.error('Batch images fetch failed:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get one
 app.get('/api/images/:id', async (req, res) => {
   const db = await readDB();
